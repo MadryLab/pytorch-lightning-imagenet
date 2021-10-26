@@ -2,9 +2,7 @@
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
+# You may obtain a copy of the License at # #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,6 +22,7 @@ or show all options you can change:
 import os
 from argparse import ArgumentParser, Namespace
 
+import pandas as pd
 import torch
 import torch.nn.functional as F
 import torch.nn.parallel
@@ -228,22 +227,30 @@ def main(args: Namespace) -> None:
     model = ImageNetLightningModel(**vars(args))
     trainer = pl.Trainer.from_argparse_args(args)
 
-    if args.evaluate:
-        trainer.test(model)
-    else:
-        trainer.fit(model)
+# if args.evaluate:
+#     trainer.test(model)
+# else:
+    trainer.fit(model)
+    import pdb; pdb.set_trace()
+    test_info = trainer.test(model)
+    print(test_info.keys())
+
+    pd.Series({
+        'test_acc':test_acc
+    }).to_csv(args.ffcv_out_path)
 
 
 def run_cli():
     parent_parser = ArgumentParser(add_help=False)
     parent_parser = pl.Trainer.add_argparse_args(parent_parser)
     parent_parser.add_argument("--data-path", metavar="DIR", type=str, help="path to dataset")
+    parent_parser.add_argument('--ffcv-out-path', type=str, required=True)
     parent_parser.add_argument(
         "-e", "--evaluate", dest="evaluate", action="store_true", help="evaluate model on validation set"
     )
     parent_parser.add_argument("--seed", type=int, default=42, help="seed for initializing training.")
     parser = ImageNetLightningModel.add_model_specific_args(parent_parser)
-    parser.set_defaults(profiler="simple", deterministic=True, max_epochs=90)
+    parser.set_defaults(profiler="simple", deterministic=True, max_epochs=1)
     args = parser.parse_args()
     main(args)
 
