@@ -48,7 +48,6 @@ import pytorch_lightning as pl
 from pl_examples import cli_lightning_logo
 from pytorch_lightning.core import LightningModule
 
-
 class ImageNetLightningModel(LightningModule):
     """
     >>> ImageNetLightningModel(data_path='missing')  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
@@ -232,8 +231,8 @@ def main(args: Namespace) -> None:
     else:
         trainer.fit(model)
 
-    import pdb; pdb.set_trace()
-    test_acc = None
+    t = trainer.test(model)
+    test_acc = t[-1]['test_acc1']
     pd.Series({
         'test_acc':test_acc
     }).to_csv(args.ffcv_out_path)
@@ -244,7 +243,8 @@ def run_cli():
     parent_parser.add_argument("--data-path", metavar="DIR", type=str, help="path to dataset")
     parent_parser.add_argument('--ffcv-out-path', type=str, required=True)
     parent_parser.add_argument(
-        "-e", "--evaluate", dest="evaluate", action="store_true", help="evaluate model on validation set"
+        "-e", "--evaluate", dest="evaluate", action="store_true",
+        help="evaluate model on validation set"
     )
     parent_parser.add_argument("--seed", type=int, default=42, help="seed for initializing training.")
     parser = ImageNetLightningModel.add_model_specific_args(parent_parser)
@@ -254,8 +254,5 @@ def run_cli():
 
 
 if __name__ == "__main__":
-    cli_lightning_logo()
+    # cli_lightning_logo()
     run_cli()
-
-
-
