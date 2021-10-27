@@ -1,8 +1,12 @@
+import pandas as pd
+
 # Copyright The PyTorch Lightning team.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at # #     http://www.apache.org/licenses/LICENSE-2.0
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -10,19 +14,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """This example is largely adapted from https://github.com/pytorch/examples/blob/master/imagenet/main.py.
+
 Before you can run this example, you will need to download the ImageNet dataset manually from the
 `official website <http://image-net.org/download>`_ and place it into a folder `path/to/imagenet`.
+
 Train on ImageNet with default parameters:
+
 .. code-block: bash
+
     python imagenet.py --data-path /path/to/imagenet
+
 or show all options you can change:
+
 .. code-block: bash
+
     python imagenet.py --help
 """
 import os
 from argparse import ArgumentParser, Namespace
 
-import pandas as pd
 import torch
 import torch.nn.functional as F
 import torch.nn.parallel
@@ -91,14 +101,17 @@ class ImageNetLightningModel(LightningModule):
         self.log("train_acc5", acc5, on_step=True, on_epoch=True, logger=True)
         return loss_train
 
-    def validation_step(self, batch, batch_idx):
+    def eval_step(self, batch, batch_idx, prefix: str):
         images, target = batch
         output = self(images)
         loss_val = F.cross_entropy(output, target)
         acc1, acc5 = self.__accuracy(output, target, topk=(1, 5))
-        self.log("val_loss", loss_val, on_step=True, on_epoch=True)
-        self.log("val_acc1", acc1, on_step=True, prog_bar=True, on_epoch=True)
-        self.log("val_acc5", acc5, on_step=True, on_epoch=True)
+        self.log(f"{prefix}_loss", loss_val, on_step=True, on_epoch=True)
+        self.log(f"{prefix}_acc1", acc1, on_step=True, prog_bar=True, on_epoch=True)
+        self.log(f"{prefix}_acc5", acc5, on_step=True, on_epoch=True)
+
+    def validation_step(self, batch, batch_idx):
+        return self.eval_step(batch, batch_idx, "val")
 
     @staticmethod
     def __accuracy(output, target, topk=(1,)):
@@ -157,21 +170,8 @@ class ImageNetLightningModel(LightningModule):
     def test_dataloader(self):
         return self.val_dataloader()
 
-    def test_step(self, *args, **kwargs):
-        return self.validation_step(*args, **kwargs)
-
-    def test_epoch_end(self, *args, **kwargs):
-        outputs = self.validation_epoch_end(*args, **kwargs)
-
-        def substitute_val_keys(out):
-            return {k.replace("val", "test"): v for k, v in out.items()}
-
-        outputs = {
-            "test_loss": outputs["val_loss"],
-            "progress_bar": substitute_val_keys(outputs["progress_bar"]),
-            "log": substitute_val_keys(outputs["log"]),
-        }
-        return outputs
+    def test_step(self, batch, batch_idx):
+        return self.eval_step(batch, batch_idx, "test")
 
     @staticmethod
     def add_model_specific_args(parent_parser):  # pragma: no-cover
@@ -227,18 +227,16 @@ def main(args: Namespace) -> None:
     model = ImageNetLightningModel(**vars(args))
     trainer = pl.Trainer.from_argparse_args(args)
 
-# if args.evaluate:
-#     trainer.test(model)
-# else:
-    trainer.fit(model)
-    import pdb; pdb.set_trace()
-    test_info = trainer.test(model)
-    print(test_info.keys())
+    if args.evaluate:
+        trainer.test(model)
+    else:
+        trainer.fit(model)
 
+    import pdb; pdb.set_trace()
+    test_acc = None
     pd.Series({
         'test_acc':test_acc
     }).to_csv(args.ffcv_out_path)
-
 
 def run_cli():
     parent_parser = ArgumentParser(add_help=False)
@@ -246,4 +244,18 @@ def run_cli():
     parent_parser.add_argument("--data-path", metavar="DIR", type=str, help="path to dataset")
     parent_parser.add_argument('--ffcv-out-path', type=str, required=True)
     parent_parser.add_argument(
-        "-e", "--evaluate", dest="evaluate", action="store_true", help="evaluate model on validation 
+        "-e", "--evaluate", dest="evaluate", action="store_true", help="evaluate model on validation set"
+    )
+    parent_parser.add_argument("--seed", type=int, default=42, help="seed for initializing training.")
+    parser = ImageNetLightningModel.add_model_specific_args(parent_parser)
+    parser.set_defaults(profiler="simple", deterministic=True, max_epochs=90)
+    args = parser.parse_args()
+    main(args)
+
+
+if __name__ == "__main__":
+    cli_lightning_logo()
+    run_cli()
+
+
+
