@@ -246,15 +246,4 @@ def run_cli():
     parent_parser.add_argument("--data-path", metavar="DIR", type=str, help="path to dataset")
     parent_parser.add_argument('--ffcv-out-path', type=str, required=True)
     parent_parser.add_argument(
-        "-e", "--evaluate", dest="evaluate", action="store_true", help="evaluate model on validation set"
-    )
-    parent_parser.add_argument("--seed", type=int, default=42, help="seed for initializing training.")
-    parser = ImageNetLightningModel.add_model_specific_args(parent_parser)
-    parser.set_defaults(profiler="simple", deterministic=True, max_epochs=1)
-    args = parser.parse_args()
-    main(args)
-
-
-if __name__ == "__main__":
-    cli_lightning_logo()
-    run_cli()
+        "-e", "--evaluate", dest="evaluate", action="store_true", help="evaluate model on validation 
