@@ -231,17 +231,10 @@ def main(args: Namespace) -> None:
     else:
         trainer.fit(model)
 
-    t = trainer.test(model)
-    test_acc = t[-1]['test_acc1']
-    pd.Series({
-        'test_acc':test_acc
-    }).to_csv(args.ffcv_out_path)
-
 def run_cli():
     parent_parser = ArgumentParser(add_help=False)
     parent_parser = pl.Trainer.add_argparse_args(parent_parser)
     parent_parser.add_argument("--data-path", metavar="DIR", type=str, help="path to dataset")
-    parent_parser.add_argument('--ffcv-out-path', type=str, required=True)
     parent_parser.add_argument(
         "-e", "--evaluate", dest="evaluate", action="store_true",
         help="evaluate model on validation set"
