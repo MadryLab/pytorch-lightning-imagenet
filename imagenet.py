@@ -231,6 +231,14 @@ def main(args: Namespace) -> None:
     else:
         trainer.fit(model)
 
+import os
+num_epochs_ = None
+if 'EPOCHS' in os.environ:
+    try:
+        num_epochs_ = int(os.environ['EPOCHS'])
+    except:
+        pass
+
 def run_cli():
     parent_parser = ArgumentParser(add_help=False)
     parent_parser = pl.Trainer.add_argparse_args(parent_parser)
@@ -241,7 +249,7 @@ def run_cli():
     )
     parent_parser.add_argument("--seed", type=int, default=42, help="seed for initializing training.")
     parser = ImageNetLightningModel.add_model_specific_args(parent_parser)
-    parser.set_defaults(profiler="simple", deterministic=True, max_epochs=90)
+    parser.set_defaults(profiler="simple", deterministic=True, max_epochs=num_epochs_ or 90)
     args = parser.parse_args()
     main(args)
 
