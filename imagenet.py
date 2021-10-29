@@ -1,5 +1,5 @@
 import pandas as pd
-
+import os
 # Copyright The PyTorch Lightning team.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -66,7 +66,7 @@ class ImageNetLightningModel(LightningModule):
     def __init__(
         self,
         data_path: str,
-        arch: str = "resnet18",
+        arch: str = os.environ['ARCH'],
         pretrained: bool = False,
         lr: float = 0.1,
         momentum: float = 0.9,
@@ -85,6 +85,9 @@ class ImageNetLightningModel(LightningModule):
         self.data_path = data_path
         self.batch_size = batch_size
         self.workers = workers
+        print('*' * 80)
+        print(f'*************** Loading model {self.arch}')
+        print('*' * 80)
         self.model = models.__dict__[self.arch](pretrained=self.pretrained)
 
     def forward(self, x):
@@ -231,7 +234,6 @@ def main(args: Namespace) -> None:
     else:
         trainer.fit(model)
 
-import os
 num_epochs_ = None
 if 'EPOCHS' in os.environ:
     try:
